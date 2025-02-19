@@ -63,27 +63,28 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.question_mark_outlined),
             label: 'Documentation',
-            backgroundColor: Colors.purple,
+            // backgroundColor: Colors.grey,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
-            backgroundColor: Colors.purple,
+            // backgroundColor: Colors.grey,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'User Setting',
-            backgroundColor: Colors.purple,
+            // backgroundColor: Colors.grey,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'App Setting',
-            backgroundColor: Colors.purple,
+            // backgroundColor: Colors.grey,
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.purpleAccent[800],
-        unselectedItemColor: Colors.white,
+        selectedItemColor: Colors.blue, // Set the selected item color to blue
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );
