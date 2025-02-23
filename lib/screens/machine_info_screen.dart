@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 
 class MachineInfoScreen extends StatelessWidget {
+  const MachineInfoScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("FANUC no 1")),
+      appBar: AppBar(title: const Text("FANUC no 1")),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(3.0),
           child: Column(
             children: [
-              _buildChartSection("Data 1"),
-              _buildChartSection("Data 2"),
-              _buildChartSection("Data 3"),
-              SizedBox(height: 10),
-              Text("Alarm History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              _buildAlarmTable("Unresolved Alarms"),
-              SizedBox(height: 10),
-              _buildAlarmTable("Resolved Alarms"),
+              _buildChartSection("Feedrate"),
+              _buildChartSection("Spindle Temp"),
+              _buildChartSection("Spindle Speed"),
+              _buildChartSection("Spindle Load"),
+              _buildChartSection("X Temp"),
+              _buildChartSection("Y Temp"),
+              _buildChartSection("Z Temp"),
+              const SizedBox(height: 16),
+              const Text("Alarm History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _buildAlarmTable(context, "Unresolved Alarms"),
+              const SizedBox(height: 10),
+              _buildAlarmTable(context, "Resolved Alarms"),
             ],
           ),
         ),
@@ -28,6 +34,7 @@ class MachineInfoScreen extends StatelessWidget {
 
   Widget _buildChartSection(String title) {
     return Card(
+      color: Colors.white,
       elevation: 3,
       child: Column(
         children: [
@@ -35,40 +42,43 @@ class MachineInfoScreen extends StatelessWidget {
             height: 200,
             width: double.infinity,
             child: Center(
-              child: Text("$title Chart Placeholder", style: TextStyle(color: Colors.grey)),
+              child: Text("$title Chart Placeholder", style: const TextStyle(color: Colors.grey)),
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.all(8.0),
+            child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAlarmTable(String title) {
+  Widget _buildAlarmTable(BuildContext context, String title) {
     return Card(
+      color: Colors.white,
       elevation: 3,
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+            padding: const EdgeInsets.all(8.0),
+            child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: [
+              columnSpacing: 10.0,
+              columns: const [
                 DataColumn(label: Text("Priority")),
                 DataColumn(label: Text("Trigger")),
-                DataColumn(label: Text(title == "Unresolved Alarms" ? "Acknowledged" : "Resolved")),
+                DataColumn(label: Text("Program")),
+                DataColumn(label: Text("Acknowledged")),
                 DataColumn(label: Text("Machine")),
                 DataColumn(label: Text("Code")),
                 DataColumn(label: Text("Summary")),
                 DataColumn(label: Text("Details")),
               ],
-              rows: List.generate(2, (index) => _buildAlarmRow()),
+              rows: List.generate(2, (index) => _buildAlarmRow(context)),
             ),
           ),
         ],
@@ -76,15 +86,39 @@ class MachineInfoScreen extends StatelessWidget {
     );
   }
 
-  DataRow _buildAlarmRow() {
+  DataRow _buildAlarmRow(BuildContext context) {
     return DataRow(cells: [
-      DataCell(Text("High")),
-      DataCell(Text("2/13/25 9:00:00")),
-      DataCell(Text("2/13/25 9:10:00")),
-      DataCell(Text("FANUC no 1")),
-      DataCell(Text("PS011")),
-      DataCell(Text("Misaligned Spindle")),
-      DataCell(IconButton(icon: Icon(Icons.arrow_forward), onPressed: () {})),
+      const DataCell(Text("High")),
+      const DataCell(Text("2/13/25 9:00:00")),
+      const DataCell(Text("Part A")),
+      const DataCell(Text("2/13/25 9:10:00")),
+      const DataCell(Text("FANUC no 1")),
+      const DataCell(Text("PS011")),
+      const DataCell(Text("Misaligned Spindle")),
+      DataCell(
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text("Alarm Details"),
+                  content: const Text("Details about the alarm..."),
+                  actions: [
+                    TextButton(
+                      child: const Text("Close"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
     ]);
   }
 }

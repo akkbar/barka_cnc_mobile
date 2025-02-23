@@ -15,14 +15,14 @@ class UserSettingScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(3.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Center(
                 child: Text(
                   'Dashboard',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
               ),
               GestureDetector(
@@ -34,7 +34,7 @@ class UserSettingScreen extends StatelessWidget {
                 },
                 child: _buildCard("Manage Active Work Orders", _buildActiveJobsTable()),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -44,7 +44,7 @@ class UserSettingScreen extends StatelessWidget {
                 },
                 child: _buildCard("View Machine Health & Alarms", _buildMachineHealth()),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -52,18 +52,8 @@ class UserSettingScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => const TrackPerformanceScreen()),
                   );
                 },
-                child: const Center(
-                  child: Text(
-                    'Track Performance >',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                ),
+                child: _buildCard("Track Performance", _buildMultipleLineCharts()),
               ),
-              const SizedBox(height: 16),
-              _buildCard("Downtime", _buildLineChart()),
-              _buildCard("Cycle Time", _buildLineChart()),
-              _buildCard("Utilization", _buildLineChart()),
-              _buildCard("Setup Time", _buildLineChart()),
             ],
           ),
         ),
@@ -75,17 +65,50 @@ class UserSettingScreen extends StatelessWidget {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child:Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children:[
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Icon(Icons.chevron_right, color: Colors.black),
+              ]),
             const SizedBox(height: 10),
             child,
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMultipleLineCharts() {
+    return Column(
+      children: [
+        _buildChartWithTitle("Setup Time"),
+        const SizedBox(height: 16),
+        _buildChartWithTitle("Utilization"),
+        const SizedBox(height: 16),
+        _buildChartWithTitle("Cycle Time"),
+        const SizedBox(height: 16),
+        _buildChartWithTitle("Downtime"),
+      ],
+    );
+  }
+
+  Widget _buildChartWithTitle(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))
+        ),
+        const SizedBox(height: 10),
+        _buildLineChart(),
+      ],
     );
   }
 
@@ -103,8 +126,8 @@ class UserSettingScreen extends StatelessWidget {
       },
       children: [
         _buildTableRow(["Status", "Name", "Machine", "Expected", "Actual"], isHeader: true),
-        _buildTableRow(["On-Time", "Part A", "FANUC no 1", "2025-02-20\n00:00:00", "2025-02-20\n00:00:00"], status: Colors.green),
-        _buildTableRow(["Late", "Part B", "FANUC no 3", "2025-02-20\n00:00:00", "2025-02-20\n00:00:00"], status: Colors.red),
+        _buildTableRow(["On-Time", "Part A", "FANUC no 1", "00:00:00", "00:00:00"], status: Colors.green),
+        _buildTableRow(["Late", "Part B", "FANUC no 3", "00:00:00", "00:00:00"], status: Colors.red),
       ],
     );
   }
@@ -135,18 +158,18 @@ class UserSettingScreen extends StatelessWidget {
       children: [
         _buildHealthSummary("New Alarm Summary", [
           _buildInfoBox("High", "1", Colors.red),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _buildInfoBox("Medium", "1", Colors.orange),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _buildInfoBox("Low", "3", Colors.blue),
         ]),
         _buildHealthSummary("Machine Health Summary", [
           _buildInfoBox("Down", "1", Colors.red),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _buildInfoBox("Running", "1", Colors.green),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _buildInfoBox("Idle", "1", Colors.orange),
-          const SizedBox(width: 10),
+          const SizedBox(width: 5),
           _buildInfoBox("Setup", "3", Colors.blue),
         ]),
       ],
@@ -156,7 +179,7 @@ class UserSettingScreen extends StatelessWidget {
   Widget _buildHealthSummary(String title, List<Widget> boxes) {
     return Column(
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -170,11 +193,17 @@ class UserSettingScreen extends StatelessWidget {
   Widget _buildInfoBox(String label, String number, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const Icon(Icons.chevron_right, color: Colors.white),
+              ]),
+            
             const SizedBox(height: 5),
             Text(number, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           ],
@@ -234,5 +263,6 @@ class UserSettingScreen extends StatelessWidget {
       ),
     );
   }
+  
 }
 

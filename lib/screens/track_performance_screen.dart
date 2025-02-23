@@ -11,6 +11,7 @@ class TrackPerformanceScreen extends StatefulWidget {
 class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
   String viewBy = "Shift";
   String chartType = "Line Chart";
+  final TextEditingController _dateRangeController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +24,7 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
             children: [
               // View Selector & Chart Type Dropdowns
               Card(
+                color: Colors.white,
                 elevation: 3,
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
@@ -60,11 +62,26 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
                             child: Padding(
                               padding: const EdgeInsets.only(left: 8.0),
                               child: TextField(
+                                controller: _dateRangeController,
                                 decoration: const InputDecoration(
                                   hintText: "Start Date",
                                   border: OutlineInputBorder(),
                                   contentPadding: EdgeInsets.symmetric(horizontal: 10),
                                 ),
+                                readOnly: true,
+                                onTap: () async {
+                                  DateTimeRange? picked = await showDateRangePicker(
+                                    context: context,
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2101),
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      _dateRangeController.text =
+                                          "${picked.start.toLocal()} - ${picked.end.toLocal()}".split(' ')[0];
+                                    });
+                                  }
+                                },
                               ),
                             ),
                           ),
@@ -75,14 +92,16 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // Utilization Chart
-              _buildCard("Utilization", _buildChartSection()),
-              const SizedBox(height: 16),
-              _buildCard("Cycle Time", _buildChartSection()),
-              const SizedBox(height: 16),
               _buildCard("Setup Time", _buildChartSection()),
+              const SizedBox(height: 10),
+              _buildCard("Utilization", _buildChartSection()),
+              const SizedBox(height: 10),
+              _buildCard("Cycle Time", _buildChartSection()),
+              const SizedBox(height: 10),
+              _buildCard("Downtime", _buildChartSection()),
             ],
           ),
         ),
@@ -114,19 +133,22 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
   Widget _buildDateButton(String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
-      child: ElevatedButton(
+      child: OutlinedButton(
         onPressed: () {},
-        style: ElevatedButton.styleFrom(
+        style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           textStyle: const TextStyle(fontSize: 12),
+          foregroundColor: Colors.blue,
+          side: const BorderSide(color: Colors.blue),
         ),
-        child: Text(label),
+        child: Text(label, style: const TextStyle(color: Colors.blue)),
       ),
     );
   }
 
   Widget _buildCard(String title, Widget child) {
     return Card(
+      color: Colors.white,
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
