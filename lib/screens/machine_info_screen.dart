@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:math';
 
 class MachineInfoScreen extends StatelessWidget {
   const MachineInfoScreen({super.key});
@@ -12,13 +14,7 @@ class MachineInfoScreen extends StatelessWidget {
           padding: const EdgeInsets.all(3.0),
           child: Column(
             children: [
-              _buildChartSection("Feedrate"),
-              _buildChartSection("Spindle Temp"),
-              _buildChartSection("Spindle Speed"),
-              _buildChartSection("Spindle Load"),
-              _buildChartSection("X Temp"),
-              _buildChartSection("Y Temp"),
-              _buildChartSection("Z Temp"),
+              ...chartDataList.map((data) => _buildChartSection(data)).toList(),
               const SizedBox(height: 16),
               const Text("Alarm History", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -32,7 +28,7 @@ class MachineInfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChartSection(String title) {
+  Widget _buildChartSection(ChartData data) {
     return Card(
       color: Colors.white,
       elevation: 3,
@@ -41,13 +37,49 @@ class MachineInfoScreen extends StatelessWidget {
           Container(
             height: 200,
             width: double.infinity,
-            child: Center(
-              child: Text("$title Chart Placeholder", style: const TextStyle(color: Colors.grey)),
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: data.chartData,
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 4,
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(data.title, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -122,3 +154,51 @@ class MachineInfoScreen extends StatelessWidget {
     ]);
   }
 }
+
+class ChartData {
+  final String title;
+  final List<FlSpot> chartData;
+
+  ChartData({
+    required this.title,
+    required this.chartData,
+  });
+}
+
+List<FlSpot> generateRandomData(int count) {
+  final random = Random();
+  return List.generate(count, (index) {
+    return FlSpot(index.toDouble(), random.nextDouble() * 100);
+  });
+}
+
+final List<ChartData> chartDataList = [
+  ChartData(
+    title: "Feedrate",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "Spindle Temp",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "Spindle Speed",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "Spindle Load",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "X Temp",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "Y Temp",
+    chartData: generateRandomData(100),
+  ),
+  ChartData(
+    title: "Z Temp",
+    chartData: generateRandomData(100),
+  ),
+];

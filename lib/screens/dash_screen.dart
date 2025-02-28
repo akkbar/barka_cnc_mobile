@@ -5,8 +5,8 @@ import 'track_quality_screen.dart';
 import 'manage_active_job_screen.dart';
 import 'view_machine_health_screen.dart';
 
-class UserSettingScreen extends StatelessWidget {
-  const UserSettingScreen({super.key});
+class DashScreen extends StatelessWidget {
+  const DashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

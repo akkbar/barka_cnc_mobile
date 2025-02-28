@@ -5,9 +5,9 @@ class ViewMachineHealthScreen extends StatelessWidget {
   const ViewMachineHealthScreen({super.key});
 
   final List<Map<String, dynamic>> alarms = const [
-    {'priority': 'High', 'time': '00:00:00', 'machine': 'FANUC no 1', 'description': 'Misaligned Spindle'},
-    {'priority': 'Medium', 'time': '00:00:00', 'machine': 'FANUC no 2', 'description': 'Misaligned Spindle'},
-    {'priority': 'Low', 'time': '00:00:00', 'machine': 'FANUC no 3', 'description': 'Misaligned Spindle'},
+    {'priority': 'High', 'time': '23/02/2025\n00:00:00', 'machine': 'FANUC no 1', 'description': 'Misaligned Spindle'},
+    {'priority': 'Medium', 'time': '23/02/2025\n00:00:00', 'machine': 'FANUC no 2', 'description': 'Misaligned Spindle'},
+    {'priority': 'Low', 'time': '23/02/2025\n00:00:00', 'machine': 'FANUC no 3', 'description': 'Misaligned Spindle'},
   ];
 
   final List<Machine> machines = const [
@@ -52,6 +52,7 @@ class ViewMachineHealthScreen extends StatelessWidget {
                         DataColumn(label: Text('Time')),
                         DataColumn(label: Text('Machine')),
                         DataColumn(label: Text('Description')),
+                        DataColumn(label: Text('Details'))
                       ],
                       rows: alarms.map((alarm) {
                         return DataRow(cells: [
@@ -86,6 +87,31 @@ class ViewMachineHealthScreen extends StatelessWidget {
                             padding: const EdgeInsets.all(2.0),
                             child: Text(alarm['description']),
                           )),
+                          DataCell(Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: IconButton(
+                              icon: const Icon(Icons.chevron_right),
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: const Text("Alarm Details"),
+                                      content: const Text("Details about the alarm..."),
+                                      actions: [
+                                        TextButton(
+                                          child: const Text("Close"),
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                            ))
+                          ),
                         ]);
                       }).toList(),
                     ),
@@ -111,7 +137,7 @@ class ViewMachineHealthScreen extends StatelessWidget {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
+                        crossAxisCount: 1,
                         childAspectRatio: 1.5, // Adjust ratio for better spacing
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
@@ -180,7 +206,105 @@ class MachineBox extends StatelessWidget {
                 width: double.infinity,
                 color: Colors.white,
                 child: Center(
-                  child: Icon(machine.icon, color: machine.color, size: 40),
+                  child: machine.status == "Running"
+                    ? const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            // Left big column
+                            Expanded(
+                              flex: 1,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center, // Aligns vertically (if inside an Expanded)
+                                crossAxisAlignment: CrossAxisAlignment.center, // Aligns horizontally
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Column(
+                                        mainAxisAlignment: MainAxisAlignment.center, // Aligns vertically (if inside an Expanded)
+                                        crossAxisAlignment: CrossAxisAlignment.center, // Aligns horizontally
+                                        children: [
+                                          Text(
+                                            "Spindle Load",
+                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                          ),
+                                          Text("7%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Column(
+                                        children: [
+                                          Text(
+                                            "Spindle Speed",
+                                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                          ),
+                                          Text("19191 rpm", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 50),
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center, // Aligns vertically (if inside an Expanded)
+                                crossAxisAlignment: CrossAxisAlignment.center, // Aligns horizontally
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "X",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      Text("7%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Y",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      Text("7%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Z",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      Text("7%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "B",
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                      ),
+                                      Text("7%", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Icon(machine.icon, color: machine.color, size: 40),
                 ),
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/documentation_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/user_setting_screen.dart';
+import 'screens/dash_screen.dart';
 import 'screens/app_setting_screen.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -38,8 +37,7 @@ class _MainScreenState extends State<MainScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     DocumentationScreen(),
-    HomeScreen(),
-    UserSettingScreen(),
+    DashScreen(),
     AppSettingScreen(),
   ];
 
@@ -71,19 +69,14 @@ class _MainScreenState extends State<MainScreen> {
             // backgroundColor: Colors.grey,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User Setting',
-            // backgroundColor: Colors.grey,
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'App Setting',
             // backgroundColor: Colors.grey,
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue, // Set the selected item color to blue
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Colors.blueAccent, // Set the selected item color to blue
+        unselectedItemColor: Colors.white,
         backgroundColor: Colors.grey,
         onTap: _onItemTapped,
       ),

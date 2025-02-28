@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-class TrackPerformanceScreen extends StatefulWidget {
-  const TrackPerformanceScreen({super.key});
+class TrackQualityScreen extends StatefulWidget {
+  const TrackQualityScreen({super.key});
 
   @override
-  _TrackPerformanceScreenState createState() => _TrackPerformanceScreenState();
+  _TrackQualityScreenState createState() => _TrackQualityScreenState();
 }
 
-class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
+class _TrackQualityScreenState extends State<TrackQualityScreen> {
   String viewBy = "Shift";
   String chartType = "Line Chart";
   final TextEditingController _dateRangeController = TextEditingController();
 
   final List<PerformanceData> performanceDataList = [
     PerformanceData(
-      title: "Setup Time",
-      summary: "5.2 hrs",
+      title: "Reject",
+      summary: "5.2 parts",
       result: "Normal",
       resultColor: Colors.green,
       chartData: [
@@ -27,52 +27,13 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
         FlSpot(DateTime(2025, 2, 23).millisecondsSinceEpoch.toDouble(), 4),
       ],
     ),
-    PerformanceData(
-      title: "Utilization",
-      summary: "75%",
-      result: "Below Normal",
-      resultColor: Colors.red,
-      chartData: [
-        FlSpot(DateTime(2025, 2, 19).millisecondsSinceEpoch.toDouble(), 2),
-        FlSpot(DateTime(2025, 2, 20).millisecondsSinceEpoch.toDouble(), 4),
-        FlSpot(DateTime(2025, 2, 21).millisecondsSinceEpoch.toDouble(), 3),
-        FlSpot(DateTime(2025, 2, 22).millisecondsSinceEpoch.toDouble(), 6),
-        FlSpot(DateTime(2025, 2, 23).millisecondsSinceEpoch.toDouble(), 5),
-      ],
-    ),
-    PerformanceData(
-      title: "Cycle Time",
-      summary: "85%",
-      result: "Normal",
-      resultColor: Colors.green,
-      chartData: [
-        FlSpot(DateTime(2025, 2, 19).millisecondsSinceEpoch.toDouble(), 2),
-        FlSpot(DateTime(2025, 2, 20).millisecondsSinceEpoch.toDouble(), 4),
-        FlSpot(DateTime(2025, 2, 21).millisecondsSinceEpoch.toDouble(), 3),
-        FlSpot(DateTime(2025, 2, 22).millisecondsSinceEpoch.toDouble(), 6),
-        FlSpot(DateTime(2025, 2, 23).millisecondsSinceEpoch.toDouble(), 5),
-      ],
-    ),
-    PerformanceData(
-      title: "Downtime",
-      summary: "2.1 hrs",
-      result: "Normal",
-      resultColor: Colors.green,
-      chartData: [
-        FlSpot(DateTime(2025, 2, 19).millisecondsSinceEpoch.toDouble(), 2),
-        FlSpot(DateTime(2025, 2, 20).millisecondsSinceEpoch.toDouble(), 4),
-        FlSpot(DateTime(2025, 2, 21).millisecondsSinceEpoch.toDouble(), 3),
-        FlSpot(DateTime(2025, 2, 22).millisecondsSinceEpoch.toDouble(), 6),
-        FlSpot(DateTime(2025, 2, 23).millisecondsSinceEpoch.toDouble(), 5),
-      ],
-    ),
     // Add more PerformanceData objects as needed
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Performance")),
+      appBar: AppBar(title: const Text("Quality")),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(10),
