@@ -2,82 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
-class MachineHealthWidget extends StatelessWidget {
+class MachineHealthWidget extends StatefulWidget {
   const MachineHealthWidget({Key? key}) : super(key: key);
 
-  Future<Map<String, dynamic>> fetchMachineHealth() async {
+  @override
+  _MachineHealthWidgetState createState() => _MachineHealthWidgetState();
+}
+
+class _MachineHealthWidgetState extends State<MachineHealthWidget> {
+  late Timer _timer;
+  final ValueNotifier<String> highNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> mediumNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> lowNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> downNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> runningNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> idleNotifier = ValueNotifier<String>('...');
+  final ValueNotifier<String> setupNotifier = ValueNotifier<String>('...');
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMachineHealth();
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      fetchMachineHealth();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    highNotifier.dispose();
+    mediumNotifier.dispose();
+    lowNotifier.dispose();
+    downNotifier.dispose();
+    runningNotifier.dispose();
+    idleNotifier.dispose();
+    setupNotifier.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchMachineHealth() async {
     final box = GetStorage();
-    final apiUrl = box.read('apiUrl') ?? '';
+    final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
     final response = await http.get(Uri.parse('$apiUrl/api/dashMachineHealth'));
 
     if (response.statusCode == 200) {
-      return json.decode(response.body);
+      final data = json.decode(response.body);
+      highNotifier.value = data['high']?.toString() ?? '0';
+      mediumNotifier.value = data['medium']?.toString() ?? '0';
+      lowNotifier.value = data['low']?.toString() ?? '0';
+      downNotifier.value = data['down']?.toString() ?? '0';
+      runningNotifier.value = data['running']?.toString() ?? '0';
+      idleNotifier.value = data['idle']?.toString() ?? '0';
+      setupNotifier.value = data['setup']?.toString() ?? '0';
     } else {
-      throw Exception('Failed to load machine health data');
+      highNotifier.value = 'X';
+      mediumNotifier.value = 'X';
+      lowNotifier.value = 'X';
+      downNotifier.value = 'X';
+      runningNotifier.value = 'X';
+      idleNotifier.value = 'X';
+      setupNotifier.value = 'X';
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: fetchMachineHealth(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Column(
-            children: [
-              _buildHealthSummary("New Alarm Summary", [
-                _buildInfoBox("High", "X", Colors.red),
-                const SizedBox(width: 5),
-                _buildInfoBox("Medium", "X", Colors.orange),
-                const SizedBox(width: 5),
-                _buildInfoBox("Low", "X", Colors.blue),
-              ]),
-              _buildHealthSummary("Machine Health Summary", [
-                _buildInfoBox("Down", "X", Colors.red),
-                const SizedBox(width: 5),
-                _buildInfoBox("Running", "X", Colors.green),
-                const SizedBox(width: 5),
-                _buildInfoBox("Idle", "X", Colors.orange),
-                const SizedBox(width: 5),
-                _buildInfoBox("Setup", "X", Colors.blue),
-              ]),
-            ],
-          );
-        } else {
-          final data = snapshot.data ?? {};
-          final high = data['high']?.toString() ?? '0';
-          final medium = data['medium']?.toString() ?? '0';
-          final low = data['low']?.toString() ?? '0';
-          final down = data['down']?.toString() ?? '0';
-          final running = data['running']?.toString() ?? '0';
-          final idle = data['idle']?.toString() ?? '0';
-          final setup = data['setup']?.toString() ?? '0';
-
-          return Column(
-            children: [
-              _buildHealthSummary("New Alarm Summary", [
-                _buildInfoBox("High", high, Colors.red),
-                const SizedBox(width: 5),
-                _buildInfoBox("Medium", medium, Colors.orange),
-                const SizedBox(width: 5),
-                _buildInfoBox("Low", low, Colors.blue),
-              ]),
-              _buildHealthSummary("Machine Health Summary", [
-                _buildInfoBox("Down", down, Colors.red),
-                const SizedBox(width: 5),
-                _buildInfoBox("Running", running, Colors.green),
-                const SizedBox(width: 5),
-                _buildInfoBox("Idle", idle, Colors.orange),
-                const SizedBox(width: 5),
-                _buildInfoBox("Setup", setup, Colors.blue),
-              ]),
-            ],
-          );
-        }
-      },
+    return Column(
+      children: [
+        _buildHealthSummary("New Alarm Summary", [
+          _buildInfoBox("High", highNotifier, Colors.red),
+          const SizedBox(width: 5),
+          _buildInfoBox("Medium", mediumNotifier, Colors.orange),
+          const SizedBox(width: 5),
+          _buildInfoBox("Low", lowNotifier, Colors.blue),
+        ]),
+        _buildHealthSummary("Machine Health Summary", [
+          _buildInfoBox("Down", downNotifier, Colors.red),
+          const SizedBox(width: 5),
+          _buildInfoBox("Running", runningNotifier, Colors.green),
+          const SizedBox(width: 5),
+          _buildInfoBox("Idle", idleNotifier, Colors.orange),
+          const SizedBox(width: 5),
+          _buildInfoBox("Setup", setupNotifier, Colors.blue),
+        ]),
+      ],
     );
   }
 
@@ -95,7 +106,7 @@ class MachineHealthWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoBox(String label, String number, Color color) {
+  Widget _buildInfoBox(String label, ValueNotifier<String> notifier, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(5),
@@ -110,7 +121,12 @@ class MachineHealthWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 5),
-            Text(number, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            ValueListenableBuilder<String>(
+              valueListenable: notifier,
+              builder: (context, value, child) {
+                return Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold));
+              },
+            ),
           ],
         ),
       ),

@@ -10,7 +10,7 @@ class ActiveJobsTableWidget extends StatelessWidget {
   Future<List<Job>> fetchJobs() async {
     final box = GetStorage();
     final apiUrl = box.read('apiUrl') ?? '';
-    final response = await http.get(Uri.parse(apiUrl));
+    final response = await http.get(Uri.parse('$apiUrl/api/dashActiveJobs'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
