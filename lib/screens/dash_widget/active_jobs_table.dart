@@ -2,19 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import '/models/work_order.dart';
 
-class ActiveJobsTableWidget extends StatelessWidget {
+class ActiveJobsTableWidget extends StatefulWidget {
   const ActiveJobsTableWidget({Key? key}) : super(key: key);
 
-  Future<List<Job>> fetchJobs() async {
+  @override
+  _ActiveJobsTableWidgetState createState() => _ActiveJobsTableWidgetState();
+}
+
+class _ActiveJobsTableWidgetState extends State<ActiveJobsTableWidget> {
+  List<ValueNotifier<Job>> _jobNotifiers = [];
+  late Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchJobs();
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) {
+      fetchJobs();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    for (var notifier in _jobNotifiers) {
+      notifier.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> fetchJobs() async {
     final box = GetStorage();
     final apiUrl = box.read('apiUrl') ?? '';
     final response = await http.get(Uri.parse('$apiUrl/api/dashActiveJobs'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Job.fromJson(json)).toList();
+      List<Job> jobs = data.map((json) => Job.fromJson(json)).toList();
+      if (_jobNotifiers.length != jobs.length) {
+        _jobNotifiers = jobs.map((job) => ValueNotifier<Job>(job)).toList();
+      } else {
+        for (int i = 0; i < jobs.length; i++) {
+          _jobNotifiers[i].value = jobs[i];
+        }
+      }
+      setState(() {});
     } else {
       throw Exception('Failed to load jobs');
     }
@@ -22,16 +57,9 @@ class ActiveJobsTableWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Job>>(
-      future: fetchJobs(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else {
-          List<Job> jobs = snapshot.data ?? [];
-          return Table(
+    return _jobNotifiers.isEmpty
+        ? const Center(child: CircularProgressIndicator())
+        : Table(
             border: const TableBorder(
               horizontalInside: BorderSide(width: 1, color: Colors.grey),
             ),
@@ -44,7 +72,7 @@ class ActiveJobsTableWidget extends StatelessWidget {
             },
             children: [
               _buildTableRow(["Status", "Name", "Machine", "Expected", "Actual"], isHeader: true),
-              if (jobs.isEmpty)
+              if (_jobNotifiers.isEmpty)
                 const TableRow(
                   children: [
                     Padding(
@@ -62,15 +90,9 @@ class ActiveJobsTableWidget extends StatelessWidget {
                   ],
                 )
               else
-                ...jobs.map((job) => _buildTableRow(
-                  [job.status, job.name, job.machine, job.expected, job.actual],
-                  status: job.statusColor,
-                )).toList(),
+                ..._jobNotifiers.map((notifier) => _buildJobRow(notifier)).toList(),
             ],
           );
-        }
-      },
-    );
   }
 
   TableRow _buildTableRow(List<String> cells, {bool isHeader = false, Color? status}) {
@@ -91,6 +113,37 @@ class ActiveJobsTableWidget extends StatelessWidget {
           ),
         );
       }).toList(),
+    );
+  }
+
+  TableRow _buildJobRow(ValueNotifier<Job> jobNotifier) {
+    return TableRow(
+      children: [
+        _buildJobCell(jobNotifier, (job) => job.status, jobNotifier.value.statusColor),
+        _buildJobCell(jobNotifier, (job) => job.name),
+        _buildJobCell(jobNotifier, (job) => job.machine),
+        _buildJobCell(jobNotifier, (job) => job.expected),
+        _buildJobCell(jobNotifier, (job) => job.actual),
+      ],
+    );
+  }
+
+  Widget _buildJobCell(ValueNotifier<Job> jobNotifier, String Function(Job) getValue, [Color? color]) {
+    return ValueListenableBuilder<Job>(
+      valueListenable: jobNotifier,
+      builder: (context, job, child) {
+        return Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Text(
+            getValue(job),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: color ?? Colors.black,
+            ),
+          ),
+        );
+      },
     );
   }
 }
