@@ -26,7 +26,7 @@ class _AppSettingScreenState extends State<AppSettingScreen> {
     });
     try {
       setState(() {
-        _savedText = box.read('savedText') ?? '';
+        _savedText = box.read('apiUrl') ?? '';
         _controller.text = _savedText;
       });
       print('Loaded saved text: $_savedText');
@@ -44,7 +44,7 @@ class _AppSettingScreenState extends State<AppSettingScreen> {
       _isLoading = true;
     });
     try {
-      await box.write('savedText', _controller.text);
+      await box.write('apiUrl', _controller.text);
       setState(() {
         _savedText = _controller.text;
       });
@@ -69,7 +69,7 @@ class _AppSettingScreenState extends State<AppSettingScreen> {
       _isLoading = true;
     });
     try {
-      await box.remove('savedText');
+      await box.remove('apiUrl');
       setState(() {
         _savedText = '';
         _controller.clear();
@@ -104,7 +104,7 @@ class _AppSettingScreenState extends State<AppSettingScreen> {
             TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                labelText: 'Enter hostname',
+                labelText: 'Enter API hostname',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -127,7 +127,7 @@ class _AppSettingScreenState extends State<AppSettingScreen> {
                 ],
               ),
             const SizedBox(height: 20),
-            Text('Saved: $_savedText'),
+            Text('Saved API: $_savedText'),
           ],
         ),
       ),

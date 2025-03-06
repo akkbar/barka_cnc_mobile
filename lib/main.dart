@@ -3,9 +3,12 @@ import 'screens/documentation_screen.dart';
 import 'screens/dash_screen.dart';
 import 'screens/app_setting_screen.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   await GetStorage.init();
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: "assets/.env");
   runApp(const MyApp());
 }
 
