@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'track_performance_screen.dart';
 import 'track_quality_screen.dart';
 import 'manage_active_job_screen.dart';
@@ -89,28 +88,4 @@ class DashScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCard(String title, Widget child) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const Icon(Icons.chevron_right, color: Colors.black),
-              ],
-            ),
-            const SizedBox(height: 10),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
 }
