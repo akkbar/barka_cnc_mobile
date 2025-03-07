@@ -1,8 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+import 'package:get_storage/get_storage.dart';
 
-class MultipleLineChartsQualityWidget extends StatelessWidget {
+class MultipleLineChartsQualityWidget extends StatefulWidget {
   const MultipleLineChartsQualityWidget({Key? key}) : super(key: key);
+
+  @override
+  _MultipleLineChartsQualityWidgetState createState() => _MultipleLineChartsQualityWidgetState();
+}
+
+class _MultipleLineChartsQualityWidgetState extends State<MultipleLineChartsQualityWidget> {
+  List<ChartData> rejectDataList = [];
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchChartData();
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+      fetchChartData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchChartData() async {
+    try {
+      await GetStorage.init(); // Ensure GetStorage is initialized
+      final box = GetStorage();
+      final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
+      print('API URL: $apiUrl'); // Log the API URL
+      final response = await http.get(Uri.parse('$apiUrl/api/quality?viewBy=Shift&dateRange=Today'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        List<ChartData> chartData = data.map((json) => ChartData.fromJson(json)).toList();
+        setState(() {
+          rejectDataList = chartData;
+        });
+      } else {
+        print('Failed to load chart data: ${response.statusCode}'); // Log the status code
+        throw Exception('Failed to load chart data');
+      }
+    } catch (e) {
+      print('Error fetching chart data: $e'); // Log the error
+      throw Exception('Failed to load chart data');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,26 +149,16 @@ class ChartData {
     required this.resultColor,
     required this.chartData,
   });
-}
 
-final List<ChartData> rejectDataList = [
-  ChartData(
-    title: "Rejected Parts",
-    summary: "3 parts",
-    result: "Above Normal",
-    resultColor: Colors.red,
-    chartData: [
-      FlSpot(DateTime(2025, 2, 25, 0).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 1).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 2).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 3).millisecondsSinceEpoch.toDouble(), 5),
-      FlSpot(DateTime(2025, 2, 25, 4).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 5).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 6).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 7).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 8).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 9).millisecondsSinceEpoch.toDouble(), 2),
-    ],
-  ),
-  // Add more ChartData objects as needed
-];
+  factory ChartData.fromJson(Map<String, dynamic> json) {
+    return ChartData(
+      title: json['title'],
+      summary: json['summary'],
+      result: json['result'],
+      resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      chartData: (json['chartData'] as List)
+          .map((data) => FlSpot(data['x'].toDouble(), data['y'].toDouble()))
+          .toList(),
+    );
+  }
+}

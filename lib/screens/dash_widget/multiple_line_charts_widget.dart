@@ -1,8 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+import 'package:get_storage/get_storage.dart';
 
-class MultipleLineChartsWidget extends StatelessWidget {
+class MultipleLineChartsWidget extends StatefulWidget {
   const MultipleLineChartsWidget({Key? key}) : super(key: key);
+
+  @override
+  _MultipleLineChartsWidgetState createState() => _MultipleLineChartsWidgetState();
+}
+
+class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
+  List<ChartData> chartDataList = [];
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchChartData();
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+      fetchChartData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchChartData() async {
+    try {
+      await GetStorage.init(); // Ensure GetStorage is initialized
+      final box = GetStorage();
+      final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
+      print('API URL: $apiUrl'); // Log the API URL
+      final response = await http.get(Uri.parse('$apiUrl/api/performance?viewBy=Shift&dateRange=Today'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        List<ChartData> chartData = data.map((json) => ChartData.fromJson(json)).toList();
+        setState(() {
+          chartDataList = chartData;
+        });
+      } else {
+        print('Failed to load chart data: ${response.statusCode}'); // Log the status code
+        throw Exception('Failed to load chart data');
+      }
+    } catch (e) {
+      print('Error fetching chart data: $e'); // Log the error
+      throw Exception('Failed to load chart data');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,80 +149,16 @@ class ChartData {
     required this.resultColor,
     required this.chartData,
   });
-}
 
-final List<ChartData> chartDataList = [
-  ChartData(
-    title: "Setup Time",
-    summary: "5.2 hrs",
-    result: "Normal",
-    resultColor: Colors.green,
-    chartData: [
-      FlSpot(DateTime(2025, 2, 25, 0).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 1).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 2).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 3).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 4).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 5).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 6).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 7).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 8).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 9).millisecondsSinceEpoch.toDouble(), 3),
-    ],
-  ),
-  ChartData(
-    title: "Utilization",
-    summary: "75%",
-    result: "Below Normal",
-    resultColor: Colors.red,
-    chartData: [
-      FlSpot(DateTime(2025, 2, 25, 0).millisecondsSinceEpoch.toDouble(), 80),
-      FlSpot(DateTime(2025, 2, 25, 1).millisecondsSinceEpoch.toDouble(), 74),
-      FlSpot(DateTime(2025, 2, 25, 2).millisecondsSinceEpoch.toDouble(), 50),
-      FlSpot(DateTime(2025, 2, 25, 3).millisecondsSinceEpoch.toDouble(), 60),
-      FlSpot(DateTime(2025, 2, 25, 4).millisecondsSinceEpoch.toDouble(), 77),
-      FlSpot(DateTime(2025, 2, 25, 5).millisecondsSinceEpoch.toDouble(), 49),
-      FlSpot(DateTime(2025, 2, 25, 6).millisecondsSinceEpoch.toDouble(), 40),
-      FlSpot(DateTime(2025, 2, 25, 7).millisecondsSinceEpoch.toDouble(), 82),
-      FlSpot(DateTime(2025, 2, 25, 8).millisecondsSinceEpoch.toDouble(), 55),
-      FlSpot(DateTime(2025, 2, 25, 9).millisecondsSinceEpoch.toDouble(), 57),
-    ],
-  ),
-  ChartData(
-    title: "Cycle Time",
-    summary: "2.1 hrs",
-    result: "Normal",
-    resultColor: Colors.green,
-    chartData: [
-      FlSpot(DateTime(2025, 2, 25, 0).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 1).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 2).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 3).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 4).millisecondsSinceEpoch.toDouble(), 3),
-      FlSpot(DateTime(2025, 2, 25, 5).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 6).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 7).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 8).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 9).millisecondsSinceEpoch.toDouble(), 3),
-    ],
-  ),
-  ChartData(
-    title: "Downtime",
-    summary: "1.2 hrs",
-    result: "Normal",
-    resultColor: Colors.green,
-    chartData: [
-      FlSpot(DateTime(2025, 2, 25, 0).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 1).millisecondsSinceEpoch.toDouble(), 1.1),
-      FlSpot(DateTime(2025, 2, 25, 2).millisecondsSinceEpoch.toDouble(), 2),
-      FlSpot(DateTime(2025, 2, 25, 3).millisecondsSinceEpoch.toDouble(), 1.2),
-      FlSpot(DateTime(2025, 2, 25, 4).millisecondsSinceEpoch.toDouble(), 1.3),
-      FlSpot(DateTime(2025, 2, 25, 5).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 6).millisecondsSinceEpoch.toDouble(), 0),
-      FlSpot(DateTime(2025, 2, 25, 7).millisecondsSinceEpoch.toDouble(), 0),
-      FlSpot(DateTime(2025, 2, 25, 8).millisecondsSinceEpoch.toDouble(), 1),
-      FlSpot(DateTime(2025, 2, 25, 9).millisecondsSinceEpoch.toDouble(), 0.5),
-    ],
-  ),
-  // Add more ChartData objects as needed
-];
+  factory ChartData.fromJson(Map<String, dynamic> json) {
+    return ChartData(
+      title: json['title'],
+      summary: json['summary'],
+      result: json['result'],
+      resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      chartData: (json['chartData'] as List)
+          .map((data) => FlSpot(data['x'].toDouble(), data['y'].toDouble()))
+          .toList(),
+    );
+  }
+}

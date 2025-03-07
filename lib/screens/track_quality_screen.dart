@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async';
+import 'package:get_storage/get_storage.dart';
+import 'package:intl/intl.dart'; // Add this import for date formatting
 
 class TrackQualityScreen extends StatefulWidget {
   const TrackQualityScreen({super.key});
@@ -12,23 +17,48 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
   String viewBy = "Shift";
   String chartType = "Line Chart";
   final TextEditingController _dateRangeController = TextEditingController();
+  List<PerformanceData> performanceDataList = [];
+  String selectedDateRange = "Today";
+  Timer? _timer;
 
-  final List<PerformanceData> performanceDataList = [
-    PerformanceData(
-      title: "Reject",
-      summary: "5.2 parts",
-      result: "Normal",
-      resultColor: Colors.green,
-      chartData: [
-        FlSpot(DateTime(2025, 2, 19).millisecondsSinceEpoch.toDouble(), 1),
-        FlSpot(DateTime(2025, 2, 20).millisecondsSinceEpoch.toDouble(), 3),
-        FlSpot(DateTime(2025, 2, 21).millisecondsSinceEpoch.toDouble(), 2),
-        FlSpot(DateTime(2025, 2, 22).millisecondsSinceEpoch.toDouble(), 5),
-        FlSpot(DateTime(2025, 2, 23).millisecondsSinceEpoch.toDouble(), 4),
-      ],
-    ),
-    // Add more PerformanceData objects as needed
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchPerformanceData();
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+      fetchPerformanceData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchPerformanceData() async {
+    try {
+      await GetStorage.init(); // Ensure GetStorage is initialized
+      final box = GetStorage();
+      final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
+      print('API URL: $apiUrl'); // Log the API URL
+      final response = await http.get(Uri.parse('$apiUrl/api/quality?viewBy=$viewBy&dateRange=$selectedDateRange'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        List<PerformanceData> performanceData = data.map((json) => PerformanceData.fromJson(json)).toList();
+        setState(() {
+          performanceDataList = performanceData;
+        });
+      } else {
+        print('Failed to load performance data: ${response.statusCode}'); // Log the status code
+        throw Exception('Failed to load performance data');
+      }
+    } catch (e) {
+      print('Error fetching performance data: $e'); // Log the error
+      throw Exception('Failed to load performance data');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +84,12 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                               "View by:",
                               ["Shift", "Machine"],
                               viewBy,
-                              (newValue) => setState(() => viewBy = newValue as String),
+                              (newValue) {
+                                setState(() {
+                                  viewBy = newValue as String;
+                                  fetchPerformanceData();
+                                });
+                              },
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -63,7 +98,11 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                               "Chart Type:",
                               ["Line Chart", "Bar Chart"],
                               chartType,
-                              (newValue) => setState(() => chartType = newValue as String),
+                              (newValue) {
+                                setState(() {
+                                  chartType = newValue as String;
+                                });
+                              },
                             ),
                           ),
                         ],
@@ -94,8 +133,11 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                                   );
                                   if (picked != null) {
                                     setState(() {
+                                      final DateFormat formatter = DateFormat('yyyy-MM-dd');
                                       _dateRangeController.text =
-                                          "${picked.start.toLocal()} - ${picked.end.toLocal()}".split(' ')[0];
+                                          "${formatter.format(picked.start)} - ${formatter.format(picked.end)}";
+                                      selectedDateRange = "${formatter.format(picked.start)} - ${formatter.format(picked.end)}";
+                                      fetchPerformanceData();
                                     });
                                   }
                                 },
@@ -104,6 +146,8 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Text("Selected Date Range: $selectedDateRange"),
                     ],
                   ),
                 ),
@@ -142,17 +186,24 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
   }
 
   Widget _buildDateButton(String label) {
+    final bool isSelected = selectedDateRange == label;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: OutlinedButton(
-        onPressed: () {},
+        onPressed: () {
+          setState(() {
+            selectedDateRange = label;
+            fetchPerformanceData();
+          });
+        },
         style: OutlinedButton.styleFrom(
+          backgroundColor: isSelected ? Colors.blue : Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 10),
           textStyle: const TextStyle(fontSize: 12),
-          foregroundColor: Colors.blue,
+          foregroundColor: isSelected ? Colors.white : Colors.blue,
           side: const BorderSide(color: Colors.blue),
         ),
-        child: Text(label, style: const TextStyle(color: Colors.blue)),
+        child: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.blue)),
       ),
     );
   }
@@ -186,46 +237,90 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
   Widget _buildChartSection(List<FlSpot> chartData) {
     return SizedBox(
       height: 200,
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: true),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
-                },
+      child: chartType == "Line Chart"
+          ? LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                        return Text('${date.month}/${date.day}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: chartData,
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 4,
+                    belowBarData: BarAreaData(show: false),
+                  ),
+                ],
+              ),
+            )
+          : BarChart(
+              BarChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                        return Text('${date.month}/${date.day}', style: const TextStyle(fontSize: 10));
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: true),
+                barGroups: chartData
+                    .map((data) => BarChartGroupData(
+                          x: data.x.toInt(),
+                          barRods: [
+                            BarChartRodData(
+                              toY: data.y,
+                              color: Colors.blue,
+                              width: 4,
+                            ),
+                          ],
+                        ))
+                    .toList(),
               ),
             ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (value, meta) {
-                  final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  return Text('${date.month}/${date.day}', style: const TextStyle(fontSize: 10));
-                },
-              ),
-            ),
-          ),
-          borderData: FlBorderData(show: true),
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartData,
-              isCurved: true,
-              color: Colors.blue,
-              barWidth: 4,
-              belowBarData: BarAreaData(show: false),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -244,4 +339,16 @@ class PerformanceData {
     required this.resultColor,
     required this.chartData,
   });
+
+  factory PerformanceData.fromJson(Map<String, dynamic> json) {
+    return PerformanceData(
+      title: json['title'],
+      summary: json['summary'],
+      result: json['result'],
+      resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      chartData: (json['chartData'] as List)
+          .map((data) => FlSpot(data['x'].toDouble(), data['y'].toDouble()))
+          .toList(),
+    );
+  }
 }
