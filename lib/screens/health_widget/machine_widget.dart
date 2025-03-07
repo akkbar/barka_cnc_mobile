@@ -110,7 +110,7 @@ class MachineBox extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const MachineInfoScreen()),
+                MaterialPageRoute(builder: (context) => MachineInfoScreen(machineId: machine.id, machineName: machine.name)),
               );
             },
             child: Column(
@@ -290,6 +290,7 @@ IconData _getIconData(String iconName) {
 }
 
 class Machine {
+  final int id;
   final String name;
   final String status;
   final String color;
@@ -302,6 +303,7 @@ class Machine {
   final String b;
 
   const Machine({
+    required this.id,
     required this.name,
     required this.status,
     required this.color,
@@ -316,6 +318,7 @@ class Machine {
 
   factory Machine.fromJson(Map<String, dynamic> json) {
     return Machine(
+      id: json['id'],
       name: json['name'],
       status: json['status'],
       color: json['color'],

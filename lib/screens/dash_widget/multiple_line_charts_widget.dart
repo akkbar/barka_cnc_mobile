@@ -20,7 +20,7 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
   void initState() {
     super.initState();
     fetchChartData();
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+    _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       fetchChartData();
     });
   }
@@ -36,7 +36,6 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
       await GetStorage.init(); // Ensure GetStorage is initialized
       final box = GetStorage();
       final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
-      print('API URL: $apiUrl'); // Log the API URL
       final response = await http.get(Uri.parse('$apiUrl/api/performance?viewBy=Shift&dateRange=Today'));
 
       if (response.statusCode == 200) {
@@ -46,11 +45,9 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
           chartDataList = chartData;
         });
       } else {
-        print('Failed to load chart data: ${response.statusCode}'); // Log the status code
         throw Exception('Failed to load chart data');
       }
     } catch (e) {
-      print('Error fetching chart data: $e'); // Log the error
       throw Exception('Failed to load chart data');
     }
   }
@@ -112,9 +109,12 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                interval: 3600000,
                 getTitlesWidget: (value, meta) {
                   final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  return Text('${date.hour}:00', style: const TextStyle(fontSize: 10));
+                  final String formattedHour = date.hour.toString().padLeft(2, '0');
+                  final String formattedMinute = date.minute.toString().padLeft(2, '0');
+                  return Text('$formattedHour:$formattedMinute', style: const TextStyle(fontSize: 10));
                 },
               ),
             ),
@@ -129,6 +129,23 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
               belowBarData: BarAreaData(show: false),
             ),
           ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              tooltipBgColor: Colors.blueAccent,
+              getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                return touchedSpots.map((touchedSpot) {
+                  final DateTime date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
+                  final String formattedHour = date.hour.toString().padLeft(2, '0');
+                  final String formattedMinute = date.minute.toString().padLeft(2, '0');
+                  final String formattedDate = '$formattedHour:$formattedMinute';
+                  return LineTooltipItem(
+                    'Time: $formattedDate\nValue: ${touchedSpot.y}',
+                    const TextStyle(color: Colors.white),
+                  );
+                }).toList();
+              },
+            ),
+          ),
         ),
       ),
     );

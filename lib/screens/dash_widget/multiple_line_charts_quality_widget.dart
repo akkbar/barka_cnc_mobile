@@ -112,9 +112,12 @@ class _MultipleLineChartsQualityWidgetState extends State<MultipleLineChartsQual
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                interval: 3600000,
                 getTitlesWidget: (value, meta) {
                   final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                  return Text('${date.hour}:00', style: const TextStyle(fontSize: 10));
+                  final String formattedHour = date.hour.toString().padLeft(2, '0');
+                  final String formattedMinute = date.minute.toString().padLeft(2, '0');
+                  return Text('$formattedHour:$formattedMinute', style: const TextStyle(fontSize: 10));
                 },
               ),
             ),
@@ -129,6 +132,23 @@ class _MultipleLineChartsQualityWidgetState extends State<MultipleLineChartsQual
               belowBarData: BarAreaData(show: false),
             ),
           ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              tooltipBgColor: Colors.blueAccent,
+              getTooltipItems: (List<LineBarSpot> touchedSpots) {
+                return touchedSpots.map((touchedSpot) {
+                  final DateTime date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
+                  final String formattedHour = date.hour.toString().padLeft(2, '0');
+                  final String formattedMinute = date.minute.toString().padLeft(2, '0');
+                  final String formattedDate = '$formattedHour:$formattedMinute';
+                  return LineTooltipItem(
+                    'Time: $formattedDate\nValue: ${touchedSpot.y}',
+                    const TextStyle(color: Colors.white),
+                  );
+                }).toList();
+              },
+            ),
+          ),
         ),
       ),
     );

@@ -12,9 +12,9 @@ class ViewMachineHealthScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(3.0),
         child: ListView(
-          children: [
+          children: const [
             AlarmTable(),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             MachineWidget(),
           ],
         ),
