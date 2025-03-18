@@ -261,7 +261,18 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                        return Text('${date.month}/${date.day}', style: const TextStyle(fontSize: 10));
+                        switch (selectedDateRange) {
+                          case "Today":
+                            return Text(DateFormat('HH:mm').format(date), style: const TextStyle(fontSize: 10));
+                          case "Week":
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                          case "Month":
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                          case "YTD":
+                            return Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10));
+                          default:
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                        }
                       },
                     ),
                   ),
@@ -301,7 +312,18 @@ class _TrackQualityScreenState extends State<TrackQualityScreen> {
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                        return Text('${date.month}/${date.day}', style: const TextStyle(fontSize: 10));
+                        switch (selectedDateRange) {
+                          case "Today":
+                            return Text(DateFormat('HH:mm').format(date), style: const TextStyle(fontSize: 10));
+                          case "Week":
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                          case "Month":
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                          case "YTD":
+                            return Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10));
+                          default:
+                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
+                        }
                       },
                     ),
                   ),
