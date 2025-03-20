@@ -16,7 +16,7 @@ class DashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Barka Demo'),
+        title: const Text('Barka CNC Monitor App'),
       ),
       body: SingleChildScrollView(
         child: Padding(

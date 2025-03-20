@@ -136,18 +136,20 @@ class _AlarmTableState extends State<AlarmTable> {
                   DataCell(
                     Padding(
                       padding: const EdgeInsets.all(2.0),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          acknowledgeAlarm(notifier.value['id']);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          textStyle: const TextStyle(fontSize: 12),
-                        ),
-                        child: const Text('ACK'),
-                      ),
+                      child: notifier.value['id'] > 0
+                          ? ElevatedButton(
+                              onPressed: () {
+                                acknowledgeAlarm(notifier.value['id']);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                textStyle: const TextStyle(fontSize: 12),
+                              ),
+                              child: const Text('ACK'),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                   DataCell(Padding(
@@ -188,12 +190,13 @@ class _AlarmTableState extends State<AlarmTable> {
                   )),
                   DataCell(Padding(
                     padding: const EdgeInsets.all(2.0),
-                    child: IconButton(
+                    child: notifier.value['id'] > 0
+                          ? IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () {
                         showAlarmDetails(notifier.value['id']);
                       },
-                    ),
+                    ) : const SizedBox.shrink(),
                   )),
                 ]);
               }).toList(),

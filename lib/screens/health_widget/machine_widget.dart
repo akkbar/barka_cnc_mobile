@@ -320,15 +320,15 @@ class Machine {
     return Machine(
       id: json['id'],
       name: json['name'],
-      status: json['status'],
+      status: json['status'] ?? 'Disconnected',
       color: json['color'],
       icon: json['icon'],
-      spindleLoad: json['spindleLoad'],
-      spindleSpeed: json['spindleSpeed'],
-      x: json['x'],
-      y: json['y'],
-      z: json['z'],
-      b: json['b'],
+      spindleLoad: json['spindleLoad'] ?? '',
+      spindleSpeed: json['spindleSpeed'] ?? '',
+      x: json['x'] ?? '',
+      y: json['y'] ?? '',
+      z: json['z'] ?? '',
+      b: json['b'] ?? '',
     );
   }
 }

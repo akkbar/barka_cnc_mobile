@@ -112,8 +112,11 @@ class _MultipleLineChartsQualityWidgetState extends State<MultipleLineChartsQual
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                interval: 3600000,
+                interval: 14400000,
                 getTitlesWidget: (value, meta) {
+                  if (value == chartData.first.x || value == chartData.last.x) {
+                    return const SizedBox.shrink(); // Skip the first title
+                  }
                   final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
                   final String formattedHour = date.hour.toString().padLeft(2, '0');
                   final String formattedMinute = date.minute.toString().padLeft(2, '0');
