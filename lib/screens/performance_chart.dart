@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart'; // Add this import for date formatting
+import 'package:fl_chart/fl_chart.dart'; // Add this import for FlSpot
+import './performance_chart/line_shift_chart.dart';
+// import './performance_chart/bar_shift_chart.dart';
+import './performance_chart/bar_machine_chart.dart';
 
 class TrackPerformanceScreen extends StatefulWidget {
   const TrackPerformanceScreen({super.key});
@@ -17,7 +20,7 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
   String viewBy = "Shift";
   String chartType = "Line Chart";
   final TextEditingController _dateRangeController = TextEditingController();
-  List<PerformanceData> performanceDataList = [];
+  List<dynamic> performanceDataList = [];
   String selectedDateRange = "Today";
 
   @override
@@ -32,13 +35,28 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
       final box = GetStorage();
       final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
       print('API URL: $apiUrl'); // Log the API URL
-      final response = await http.get(Uri.parse('$apiUrl/api/performance?viewBy=$viewBy&dateRange=$selectedDateRange'));
+      final response = await http.get(Uri.parse('$apiUrl/api/performance?viewBy=$viewBy&dateRange=$selectedDateRange&chartType=$chartType'));
 
       if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        List<PerformanceData> performanceData = data.map((json) => PerformanceData.fromJson(json)).toList();
+        dynamic data = json.decode(response.body);
+        print(data);
         setState(() {
-          performanceDataList = performanceData;
+          if (viewBy == "Machine") {
+            performanceDataList = (data as List).map((json) => PerformanceData.fromJson(json)).toList();
+          } else {
+            performanceDataList = [];
+            for (var metric in data['shift1']) {
+              performanceDataList.add(ShiftPerformanceData.fromJson({
+                'title': metric['title'],
+                'summary': metric['summary'],
+                'result': metric['result'],
+                'resultColor': metric['resultColor'],
+                'shift1': metric['chartData'],
+                'shift2': data['shift2'].firstWhere((m) => m['title'] == metric['title'])['chartData'],
+                'shift3': data['shift3'].firstWhere((m) => m['title'] == metric['title'])['chartData'],
+              }));
+            }
+          }
         });
       } else {
         print('Failed to load performance data: ${response.statusCode}'); // Log the status code
@@ -198,7 +216,7 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
     );
   }
 
-  Widget _buildCard(PerformanceData data) {
+  Widget _buildCard(dynamic data) {
     return Card(
       color: Colors.white,
       elevation: 4,
@@ -217,125 +235,42 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            _buildChartSection(data.chartData),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildChartSection(List<FlSpot> chartData) {
-    return SizedBox(
-      height: 200,
-      child: chartType == "Line Chart"
-          ? LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: true),
+            // **Dynamic Chart Rendering**
+            if (viewBy == "Machine")
+              BarMachineChart(data: data as PerformanceData) // Cast to PerformanceData
+            else if (chartType == "Line Chart" && viewBy == "Shift")
+              LineShiftChart(
                 lineBarsData: [
+                  // Series for Shift 1
                   LineChartBarData(
-                    spots: chartData,
+                    spots: data.shift1.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
                     isCurved: true,
                     color: Colors.blue,
                     barWidth: 4,
-                    belowBarData: BarAreaData(show: false),
+                  ),
+                  // Series for Shift 2
+                  LineChartBarData(
+                    spots: data.shift2.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
+                    isCurved: true,
+                    color: Colors.green,
+                    barWidth: 4,
+                  ),
+                  // Series for Shift 3
+                  LineChartBarData(
+                    spots: data.shift3.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 4,
                   ),
                 ],
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: Colors.blueAccent,
-                    getTooltipItems: (List<LineBarSpot> touchedSpots) {
-                      return touchedSpots.map((touchedSpot) {
-                        final DateTime date = DateTime.fromMillisecondsSinceEpoch(touchedSpot.x.toInt());
-                        final String formattedHour = date.hour.toString().padLeft(2, '0');
-                        final String formattedMinute = date.minute.toString().padLeft(2, '0');
-                        final String formattedDate = '$formattedHour:$formattedMinute';
-                        return LineTooltipItem(
-                          'Time: $formattedDate\nValue: ${touchedSpot.y}',
-                          const TextStyle(color: Colors.white),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-              ),
-            )
-          : BarChart(
-              BarChartData(
-                gridData: const FlGridData(show: true),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        return Text('${value.toInt()}', style: const TextStyle(fontSize: 10));
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final DateTime date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                        switch (selectedDateRange) {
-                          case "Today":
-                            return Text(DateFormat('HH:mm').format(date), style: const TextStyle(fontSize: 10));
-                          case "Week":
-                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
-                          case "Month":
-                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
-                          case "YTD":
-                            return Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10));
-                          default:
-                            return Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10));
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: true),
-                barGroups: chartData
-                    .map((data) => BarChartGroupData(
-                          x: data.x.toInt(),
-                          barRods: [
-                            BarChartRodData(
-                              toY: data.y,
-                              color: Colors.blue,
-                              width: 4,
-                            ),
-                          ],
-                        ))
-                    .toList(),
-              ),
-            ),
+                xLabels: data.shift1.map((e) => DateFormat('MM/dd').format(e.x)).toList(),
+              )
+            else
+              const Text("Invalid selection"),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -345,7 +280,7 @@ class PerformanceData {
   final String summary;
   final String result;
   final Color resultColor;
-  final List<FlSpot> chartData;
+  final List<ChartDataPoint> chartData;
 
   PerformanceData({
     required this.title,
@@ -362,8 +297,68 @@ class PerformanceData {
       result: json['result'],
       resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
       chartData: (json['chartData'] as List)
-          .map((data) => FlSpot(data['x'], data['y'].toDouble()))
+          .map((data) => ChartDataPoint.fromJson(data))
           .toList(),
+    );
+  }
+}
+
+class ChartDataPoint {
+  final String x;
+  final double y;
+
+  ChartDataPoint({required this.x, required this.y});
+
+  factory ChartDataPoint.fromJson(Map<String, dynamic> json) {
+    return ChartDataPoint(
+      x: json['x'],
+      y: json['y'].toDouble(),
+    );
+  }
+}
+
+class ShiftPerformanceData {
+  final String title;
+  final String summary;
+  final String result;
+  final Color resultColor;
+  final List<ShiftChartDataPoint> shift1;
+  final List<ShiftChartDataPoint> shift2;
+  final List<ShiftChartDataPoint> shift3;
+
+  ShiftPerformanceData({
+    required this.title,
+    required this.summary,
+    required this.result,
+    required this.resultColor,
+    required this.shift1,
+    required this.shift2,
+    required this.shift3,
+  });
+
+  factory ShiftPerformanceData.fromJson(Map<String, dynamic> json) {
+    return ShiftPerformanceData(
+      title: json['title'],
+      summary: json['summary'],
+      result: json['result'],
+      resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      shift1: (json['shift1'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
+      shift2: (json['shift2'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
+      shift3: (json['shift3'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
+    );
+  }
+}
+
+class ShiftChartDataPoint {
+  final DateTime x;
+  final double y;
+
+  ShiftChartDataPoint({required this.x, required this.y});
+
+  factory ShiftChartDataPoint.fromJson(Map<String, dynamic> json) {
+    return ShiftChartDataPoint(
+      x: DateTime.fromMillisecondsSinceEpoch(json['x']),
+      y: json['y'].toDouble(),
     );
   }
 }

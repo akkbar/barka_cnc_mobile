@@ -37,7 +37,7 @@ class _MultipleLineChartsQualityWidgetState extends State<MultipleLineChartsQual
       final box = GetStorage();
       final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
       print('API URL: $apiUrl'); // Log the API URL
-      final response = await http.get(Uri.parse('$apiUrl/api/quality?viewBy=Shift&dateRange=Today'));
+      final response = await http.get(Uri.parse('$apiUrl/api/quality'));
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);

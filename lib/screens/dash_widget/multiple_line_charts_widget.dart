@@ -36,7 +36,7 @@ class _MultipleLineChartsWidgetState extends State<MultipleLineChartsWidget> {
       await GetStorage.init(); // Ensure GetStorage is initialized
       final box = GetStorage();
       final apiUrl = box.read('apiUrl') ?? 'http://localhost:3000';
-      final response = await http.get(Uri.parse('$apiUrl/api/performance?viewBy=Shift&dateRange=Today'));
+      final response = await http.get(Uri.parse('$apiUrl/api/performance'));
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
