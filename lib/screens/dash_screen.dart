@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-// import 'track_performance_screen.dart';
 import 'performance_chart.dart';
-import 'track_quality_screen.dart';
+import 'quality_chart.dart';
 import 'manage_active_job_screen.dart';
 import 'view_machine_health_screen.dart';
 import 'dash_widget/card_widget.dart';
