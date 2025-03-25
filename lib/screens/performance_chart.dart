@@ -4,9 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:intl/intl.dart'; // Add this import for date formatting
-import 'package:fl_chart/fl_chart.dart'; // Add this import for FlSpot
 import './performance_chart/line_shift_chart.dart';
-// import './performance_chart/bar_shift_chart.dart';
+import './performance_chart/bar_shift_chart.dart';
 import './performance_chart/bar_machine_chart.dart';
 
 class TrackPerformanceScreen extends StatefulWidget {
@@ -44,18 +43,7 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
           if (viewBy == "Machine") {
             performanceDataList = (data as List).map((json) => PerformanceData.fromJson(json)).toList();
           } else {
-            performanceDataList = [];
-            for (var metric in data['shift1']) {
-              performanceDataList.add(ShiftPerformanceData.fromJson({
-                'title': metric['title'],
-                'summary': metric['summary'],
-                'result': metric['result'],
-                'resultColor': metric['resultColor'],
-                'shift1': metric['chartData'],
-                'shift2': data['shift2'].firstWhere((m) => m['title'] == metric['title'])['chartData'],
-                'shift3': data['shift3'].firstWhere((m) => m['title'] == metric['title'])['chartData'],
-              }));
-            }
+            performanceDataList = parseShiftData(data as Map<String, dynamic>);
           }
         });
       } else {
@@ -226,48 +214,100 @@ class _TrackPerformanceScreenState extends State<TrackPerformanceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(data.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                Text(data.summary, style: const TextStyle(fontSize: 14)),
-                Text(data.result, style: TextStyle(fontSize: 14, color: data.resultColor)),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // **Dynamic Chart Rendering**
-            if (viewBy == "Machine")
-              BarMachineChart(data: data as PerformanceData) // Cast to PerformanceData
-            else if (chartType == "Line Chart" && viewBy == "Shift")
-              LineShiftChart(
-                lineBarsData: [
-                  // Series for Shift 1
-                  LineChartBarData(
-                    spots: data.shift1.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
-                    isCurved: true,
-                    color: Colors.blue,
-                    barWidth: 4,
-                  ),
-                  // Series for Shift 2
-                  LineChartBarData(
-                    spots: data.shift2.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
-                    isCurved: true,
-                    color: Colors.green,
-                    barWidth: 4,
-                  ),
-                  // Series for Shift 3
-                  LineChartBarData(
-                    spots: data.shift3.map((e) => FlSpot(e.x.millisecondsSinceEpoch.toDouble(), e.y)).toList(),
-                    isCurved: true,
-                    color: Colors.red,
-                    barWidth: 4,
-                  ),
+            if (chartType == "Bar Chart" && viewBy == "Machine") ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(data.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.result, style: TextStyle(fontSize: 14, color: data.resultColor)),
                 ],
-                xLabels: data.shift1.map((e) => DateFormat('MM/dd').format(e.x)).toList(),
-              )
-            else
-              const Text("Invalid selection"),
+              ),
+              const SizedBox(height: 10),
+              BarMachineChart(data: data as PerformanceData)
+            ]
+            else if (chartType == "Line Chart" && viewBy == "Shift") ...[
+              Text(data.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 5),
+              
+              // Summary and Result for Shift 1
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 1:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift1Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift1Result, style: TextStyle(fontSize: 14, color: data.shift1Color)),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // Summary and Result for Shift 2
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 2:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift2Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift2Result, style: TextStyle(fontSize: 14, color: data.shift2Color)),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // Summary and Result for Shift 3
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 3:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift3Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift3Result, style: TextStyle(fontSize: 14, color: data.shift3Color)),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // 3-Series Line Chart
+              ShiftLineChart(data: data),
+            ]
+            else if (chartType == "Bar Chart" && viewBy == "Shift") ...[
+              Text(data.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 5),
+              
+              // Summary and Result for Shift 1
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 1:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift1Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift1Result, style: TextStyle(fontSize: 14, color: data.shift1Color)),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // Summary and Result for Shift 2
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 2:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift2Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift2Result, style: TextStyle(fontSize: 14, color: data.shift2Color)),
+                ],
+              ),
+              const SizedBox(height: 5),
+
+              // Summary and Result for Shift 3
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Shift 3:", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(data.shift3Summary, style: const TextStyle(fontSize: 14)),
+                  Text(data.shift3Result, style: TextStyle(fontSize: 14, color: data.shift3Color)),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // 3-Series Line Chart
+              ShiftBarChart(data: data),
+            ]
+            else 
+              const Text("Invalid selection, View by Machine only supported Bar Chart"),
           ],
         ),
       ),
@@ -317,38 +357,6 @@ class ChartDataPoint {
   }
 }
 
-class ShiftPerformanceData {
-  final String title;
-  final String summary;
-  final String result;
-  final Color resultColor;
-  final List<ShiftChartDataPoint> shift1;
-  final List<ShiftChartDataPoint> shift2;
-  final List<ShiftChartDataPoint> shift3;
-
-  ShiftPerformanceData({
-    required this.title,
-    required this.summary,
-    required this.result,
-    required this.resultColor,
-    required this.shift1,
-    required this.shift2,
-    required this.shift3,
-  });
-
-  factory ShiftPerformanceData.fromJson(Map<String, dynamic> json) {
-    return ShiftPerformanceData(
-      title: json['title'],
-      summary: json['summary'],
-      result: json['result'],
-      resultColor: Color(int.parse(json['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
-      shift1: (json['shift1'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
-      shift2: (json['shift2'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
-      shift3: (json['shift3'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList(),
-    );
-  }
-}
-
 class ShiftChartDataPoint {
   final DateTime x;
   final double y;
@@ -358,7 +366,98 @@ class ShiftChartDataPoint {
   factory ShiftChartDataPoint.fromJson(Map<String, dynamic> json) {
     return ShiftChartDataPoint(
       x: DateTime.fromMillisecondsSinceEpoch(json['x']),
-      y: json['y'].toDouble(),
+      y: (json['y'] as num).toDouble(),
     );
   }
+}
+
+class ShiftPerformanceData {
+  final String title;
+  final String shift1Summary, shift2Summary, shift3Summary;
+  final String shift1Result, shift2Result, shift3Result;
+  final Color shift1Color, shift2Color, shift3Color;
+  final List<ShiftChartDataPoint> shift1, shift2, shift3;
+
+  ShiftPerformanceData({
+    required this.title,
+    required this.shift1Summary,
+    required this.shift2Summary,
+    required this.shift3Summary,
+    required this.shift1Result,
+    required this.shift2Result,
+    required this.shift3Result,
+    required this.shift1Color,
+    required this.shift2Color,
+    required this.shift3Color,
+    required this.shift1,
+    required this.shift2,
+    required this.shift3,
+  });
+
+  factory ShiftPerformanceData.fromJson(Map<String, dynamic> json) {
+    return ShiftPerformanceData(
+      title: json['title'],
+      shift1Summary: json['shift1']['summary'],
+      shift2Summary: json['shift2']['summary'],
+      shift3Summary: json['shift3']['summary'],
+      shift1Result: json['shift1']['result'],
+      shift2Result: json['shift2']['result'],
+      shift3Result: json['shift3']['result'],
+      shift1Color: Color(int.parse(json['shift1']['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      shift2Color: Color(int.parse(json['shift2']['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      shift3Color: Color(int.parse(json['shift3']['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+      shift1: (json['shift1']['chartData'] as List)
+          .map((data) => ShiftChartDataPoint.fromJson(data))
+          .toList(),
+      shift2: (json['shift2']['chartData'] as List)
+          .map((data) => ShiftChartDataPoint.fromJson(data))
+          .toList(),
+      shift3: (json['shift3']['chartData'] as List)
+          .map((data) => ShiftChartDataPoint.fromJson(data))
+          .toList(),
+    );
+  }
+}
+
+
+List<ShiftPerformanceData> parseShiftData(Map<String, dynamic> data) {
+  List<ShiftPerformanceData> shiftDataList = [];
+  try {
+    // Use shift1's structure to iterate through categories
+    for (var metric in data['shift1']) {
+      var shift2Data = data['shift2']
+          .firstWhere((m) => m['title'] == metric['title'], orElse: () => null);
+      var shift3Data = data['shift3']
+          .firstWhere((m) => m['title'] == metric['title'], orElse: () => null);
+
+      shiftDataList.add(ShiftPerformanceData(
+        title: metric['title'],
+        shift1Summary: metric['summary'],
+        shift2Summary: shift2Data?['summary'] ?? '',
+        shift3Summary: shift3Data?['summary'] ?? '',
+        shift1Result: metric['result'],
+        shift2Result: shift2Data?['result'] ?? '',
+        shift3Result: shift3Data?['result'] ?? '',
+        shift1Color: Color(int.parse(metric['resultColor'].substring(1, 7), radix: 16) + 0xFF000000),
+        shift2Color: shift2Data != null
+            ? Color(int.parse(shift2Data['resultColor'].substring(1, 7), radix: 16) + 0xFF000000)
+            : Colors.grey,
+        shift3Color: shift3Data != null
+            ? Color(int.parse(shift3Data['resultColor'].substring(1, 7), radix: 16) + 0xFF000000)
+            : Colors.grey,
+        shift1: (metric['chartData'] as List)
+            .map((data) => ShiftChartDataPoint.fromJson(data))
+            .toList(),
+        shift2: shift2Data != null
+            ? (shift2Data['chartData'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList()
+            : [],
+        shift3: shift3Data != null
+            ? (shift3Data['chartData'] as List).map((data) => ShiftChartDataPoint.fromJson(data)).toList()
+            : [],
+      ));
+    }
+  } catch (e) {
+    print("Error parsing shift data: $e");
+  }
+  return shiftDataList;
 }
